@@ -3,8 +3,8 @@ pub mod domain;
 pub mod routes;
 pub mod services;
 
-use crate::app_state::AppState;
-use axum::{routing::post, serve::Serve, Router};
+use crate::{app_state::AppState, domain::error::AuthAPIError};
+use axum::{http::StatusCode, response::IntoResponse, routing::post, serve::Serve, Json, Router};
 use std::error::Error;
 use tower_http::services::ServeDir;
 
@@ -34,5 +34,27 @@ impl Application {
     pub async fn run(self) -> Result<(), std::io::Error> {
         println!("listening on {}", &self.address);
         self.server.await
+    }
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct ErrorResponse {
+    pub error: String,
+}
+
+impl IntoResponse for AuthAPIError {
+    fn into_response(self) -> axum::response::Response {
+        let (status, error_message) = match self {
+            AuthAPIError::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
+            AuthAPIError::InvalidCredentials => (StatusCode::BAD_REQUEST, "Invalid credentials"),
+            AuthAPIError::UnexpectedError => {
+                (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
+            }
+        };
+
+        let body = Json(ErrorResponse {
+            error: error_message.to_string(),
+        });
+        (status, body).into_response()
     }
 }
