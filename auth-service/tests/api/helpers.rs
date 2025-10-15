@@ -1,6 +1,7 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use auth_service::Application;
+use tokio::sync::RwLock;
 
 pub struct TestApp {
     pub address: String,
