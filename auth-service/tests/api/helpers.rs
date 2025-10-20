@@ -1,10 +1,12 @@
 use std::sync::Arc;
 
-use auth_service::Application;
+use auth_service::{utils::constants, Application};
+use reqwest::cookie::Jar;
 use tokio::sync::RwLock;
 
 pub struct TestApp {
     pub address: String,
+    pub cookie_jar: Arc<Jar>,
     pub http_client: reqwest::Client,
 }
 
@@ -15,7 +17,7 @@ impl TestApp {
         ));
         let app_state = auth_service::app_state::AppState::new(user_store);
 
-        let app = Application::build(app_state, "127.0.0.1:0")
+        let app = Application::build(app_state, constants::test::APP_ADDRESS)
             .await
             .expect("Failed to build app");
 
@@ -24,10 +26,15 @@ impl TestApp {
         #[allow(clippy::let_underscore_future)]
         let _ = tokio::spawn(app.run());
 
-        let http_client = reqwest::Client::builder().build().unwrap();
+        let cookie_jar = Arc::new(Jar::default());
+        let http_client = reqwest::Client::builder()
+            .cookie_provider(cookie_jar.clone())
+            .build()
+            .unwrap();
 
         Self {
             address,
+            cookie_jar,
             http_client,
         }
     }
