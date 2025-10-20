@@ -1,5 +1,5 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
-use axum_extra::extract::{cookie::Cookie, CookieJar};
+use axum_extra::extract::CookieJar;
 
 use crate::{
     app_state::AppState,
@@ -10,25 +10,13 @@ pub async fn login(
     State(state): State<AppState>,
     jar: CookieJar,
     Json(request): Json<LoginRequest>,
-) -> (CookieJar, Result<impl IntoResponse, AuthAPIError>) {
-    let (email, password) = (request.email, request.password);
+) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
+    let email = Email::parse(request.email).map_err(|_| AuthAPIError::InvalidCredentials)?;
 
-    match login_int(&state, email, password).await {
-        Ok(auth_token) => (jar.add(auth_token), Ok(StatusCode::OK)),
-        Err(e) => (jar, Err(e)),
-    }
-}
+    let password =
+        Password::parse(request.password).map_err(|_| AuthAPIError::InvalidCredentials)?;
 
-async fn login_int(
-    app_state: &AppState,
-    email: String,
-    password: String,
-) -> Result<Cookie<'static>, AuthAPIError> {
-    let email = Email::parse(email).map_err(|_| AuthAPIError::InvalidCredentials)?;
-
-    let password = Password::parse(password).map_err(|_| AuthAPIError::InvalidCredentials)?;
-
-    let user_store = app_state.user_store.read().await;
+    let user_store = state.user_store.read().await;
 
     user_store
         .validate_user(&email, &password)
@@ -47,7 +35,8 @@ async fn login_int(
     let auth_cookie = crate::utils::auth::generate_auth_cookie(&user.email)
         .map_err(|_| AuthAPIError::UnexpectedError)?;
 
-    Ok(auth_cookie)
+    let jar = jar.add(auth_cookie);
+    Ok((jar, StatusCode::OK))
 }
 
 #[derive(serde::Deserialize)]
