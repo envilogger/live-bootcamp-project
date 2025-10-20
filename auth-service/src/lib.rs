@@ -2,6 +2,7 @@ pub mod app_state;
 pub mod domain;
 pub mod routes;
 pub mod services;
+pub mod utils;
 
 use crate::{app_state::AppState, domain::error::AuthAPIError};
 use axum::{http::StatusCode, response::IntoResponse, routing::post, serve::Serve, Json, Router};
