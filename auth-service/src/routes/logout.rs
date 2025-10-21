@@ -11,9 +11,7 @@ pub async fn logout(jar: CookieJar) -> Result<(CookieJar, impl IntoResponse), Au
         .get(crate::utils::constants::JWT_COOKIE_NAME)
         .ok_or(AuthAPIError::MissingToken)?;
 
-    validate_token(cookie.value())
-        .await
-        .map_err(|_| AuthAPIError::InvalidToken)?;
+    validate_token(cookie.value()).map_err(|_| AuthAPIError::InvalidToken)?;
 
     let jar = jar.remove(JWT_COOKIE_NAME);
 
