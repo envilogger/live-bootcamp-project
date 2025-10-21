@@ -11,6 +11,12 @@ pub trait UserStore: Send + Sync {
     ) -> Result<User, UserStoreError>;
 }
 
+#[async_trait::async_trait]
+pub trait BannedTokenStore: Send + Sync {
+    async fn ban_token(&mut self, token: &str);
+    async fn is_token_banned(&self, token: &str) -> bool;
+}
+
 #[derive(Debug, Clone)]
 pub enum UserStoreError {
     UserAlreadyExists,

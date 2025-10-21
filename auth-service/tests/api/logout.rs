@@ -37,16 +37,33 @@ async fn should_return_200_if_valid_jwt_cookie() {
         "requires2FA": false
     });
 
+    // TODO: instead of sign-up, directly add user to the store
     let _ = app.post_signup(&body).await;
 
     let body = serde_json::json!({
         "email": random_email,
         "password": "password123"
     });
-    let _ = app.post_login(&body).await;
+
+    let response = app.post_login(&body).await;
+
+    let cookie = response
+        .cookies()
+        .find(|c| c.name() == JWT_COOKIE_NAME)
+        .expect("JWT cookie not found during login");
+
+    let token = cookie.value().to_owned();
 
     let response = app.post_logout().await;
     assert_eq!(response.status().as_u16(), 200);
+
+    // Verify that the token is banned
+    let is_banned = {
+        let store = app.banned_token_store.read().await;
+        store.is_token_banned(&token).await
+    };
+
+    assert!(is_banned, "Token should be banned after logout");
 }
 
 #[tokio::test]

@@ -5,8 +5,15 @@ use tokio::sync::RwLock;
 
 #[tokio::main]
 async fn main() {
-    let user_store = auth_service::services::HashMapUserStore::default();
-    let app_state = AppState::new(Arc::new(RwLock::new(user_store)));
+    let user_store = Arc::new(RwLock::new(
+        auth_service::services::HashMapUserStore::default(),
+    ));
+
+    let banned_token_store = Arc::new(RwLock::new(
+        auth_service::services::HashsetBannedTokenStore::default(),
+    ));
+
+    let app_state = AppState::new(user_store, banned_token_store);
 
     let app = Application::build(app_state, constants::prod::APP_ADDRESS)
         .await
