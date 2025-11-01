@@ -12,8 +12,11 @@ use axum::{
     serve::Serve,
     Json, Router,
 };
+use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::error::Error;
 use tower_http::{cors::CorsLayer, services::ServeDir};
+
+const PG_POOL_MAX_CONNECTIONS: u32 = 5;
 
 pub struct Application {
     server: Serve<Router, Router>,
@@ -78,4 +81,8 @@ impl IntoResponse for AuthAPIError {
         });
         (status, body).into_response()
     }
+}
+
+pub async fn get_postgres_pool(url: &str) -> Result<PgPool, sqlx::Error> {
+    PgPoolOptions::new().max_connections(PG_POOL_MAX_CONNECTIONS).connect(url).await
 }
