@@ -10,6 +10,7 @@ pub struct TestApp {
     pub http_client: reqwest::Client,
     pub banned_token_store: Arc<RwLock<dyn BannedTokenStore>>,
     pub two_fa_code_store: Arc<RwLock<dyn auth_service::domain::TwoFACodeStore>>,
+    pub user_store: Arc<RwLock<dyn auth_service::domain::UserStore>>,
 }
 
 impl TestApp {
@@ -29,7 +30,7 @@ impl TestApp {
         let email_client = Arc::new(auth_service::services::MockEmailClient {});
 
         let app_state = auth_service::app_state::AppState::new(
-            user_store,
+            user_store.clone(),
             banned_token_store.clone(),
             two_fa_code_store.clone(),
             email_client,
@@ -56,6 +57,7 @@ impl TestApp {
             http_client,
             banned_token_store,
             two_fa_code_store,
+            user_store,
         }
     }
 
@@ -67,10 +69,7 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
 
-    pub async fn post_signup<Body>(&self, body: &Body) -> reqwest::Response
-    where
-        Body: serde::Serialize,
-    {
+    pub async fn post_signup<Body : serde::Serialize>(&self, body: &Body) -> reqwest::Response {
         self.http_client
             .post(format!("{}/signup", &self.address))
             .json(body)
@@ -79,10 +78,7 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
 
-    pub async fn post_login<Body>(&self, body: &Body) -> reqwest::Response
-    where
-        Body: serde::Serialize,
-    {
+    pub async fn post_login<Body: serde::Serialize>(&self, body: &Body) -> reqwest::Response {
         self.http_client
             .post(format!("{}/login", &self.address))
             .json(body)
@@ -91,9 +87,10 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
 
-    pub async fn post_verify_2fa(&self) -> reqwest::Response {
+    pub async fn post_verify_2fa<Body: serde::Serialize>(&self, body: &Body) -> reqwest::Response {
         self.http_client
             .post(format!("{}/verify-2fa", &self.address))
+            .json(body)
             .send()
             .await
             .expect("Failed to execute request.")

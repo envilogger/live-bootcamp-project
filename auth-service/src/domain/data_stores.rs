@@ -64,6 +64,17 @@ impl AsRef<str> for TwoFACode {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TwoFACode(String);
+
+impl TwoFACode {
+    pub fn parse(code: &str) -> Result<Self, String> {
+        if code.len() == 6 && code.chars().all(|c| c.is_digit(10)) {
+            Ok(TwoFACode(code.to_owned()))
+        } else {
+            Err("Invalid 2FA code format".to_string())
+        }
+    }
+}
+
 #[async_trait::async_trait]
 pub trait BannedTokenStore: Send + Sync {
     async fn ban_token(&mut self, token: &str);

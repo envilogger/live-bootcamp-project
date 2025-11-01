@@ -70,6 +70,7 @@ impl IntoResponse for AuthAPIError {
             }
             AuthAPIError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid token"),
             AuthAPIError::MissingToken => (StatusCode::BAD_REQUEST, "Missing token"),
+            AuthAPIError::Invalid2FACodeRequest => (StatusCode::BAD_REQUEST, "Invalid 2FA code"),
         };
 
         let body = Json(ErrorResponse {
