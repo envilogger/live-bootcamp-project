@@ -56,6 +56,12 @@ impl Default for TwoFACode {
     }
 }
 
+impl AsRef<str> for TwoFACode {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct TwoFACode(String);
 #[async_trait::async_trait]

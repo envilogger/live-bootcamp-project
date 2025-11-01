@@ -49,7 +49,17 @@ async fn handle_2fa(
     let mut store = state.two_fa_code_store.write().await;
 
     store
-        .add_code(email.clone(), login_attempt_id.clone(), two_fa_code)
+        .add_code(email.clone(), login_attempt_id.clone(), two_fa_code.clone())
+        .await
+        .map_err(|_| AuthAPIError::UnexpectedError)?;
+
+    state
+        .email_client
+        .send_email(
+            email,
+            "2FA token",
+            &format!("Your 2FA code is: {}", two_fa_code.as_ref().to_string()),
+        )
         .await
         .map_err(|_| AuthAPIError::UnexpectedError)?;
 

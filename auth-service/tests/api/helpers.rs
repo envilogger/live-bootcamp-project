@@ -26,10 +26,13 @@ impl TestApp {
             auth_service::services::HashMapTwoFACodeStore::default(),
         ));
 
+        let email_client = Arc::new(auth_service::services::MockEmailClient {});
+
         let app_state = auth_service::app_state::AppState::new(
             user_store,
             banned_token_store.clone(),
             two_fa_code_store.clone(),
+            email_client,
         );
 
         let app = Application::build(app_state, constants::test::APP_ADDRESS)

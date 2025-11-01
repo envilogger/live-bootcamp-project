@@ -17,7 +17,11 @@ async fn main() {
         auth_service::services::HashMapTwoFACodeStore::default(),
     ));
 
-    let app_state = AppState::new(user_store, banned_token_store, two_fa_code_store);
+    let email_client = Arc::new(
+        auth_service::services::MockEmailClient{},
+    );
+
+    let app_state = AppState::new(user_store, banned_token_store, two_fa_code_store, email_client);
 
     let app = Application::build(app_state, constants::prod::APP_ADDRESS)
         .await
