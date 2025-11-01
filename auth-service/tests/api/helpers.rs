@@ -9,6 +9,7 @@ pub struct TestApp {
     pub cookie_jar: Arc<Jar>,
     pub http_client: reqwest::Client,
     pub banned_token_store: Arc<RwLock<dyn BannedTokenStore>>,
+    pub two_fa_code_store: Arc<RwLock<dyn auth_service::domain::TwoFACodeStore>>,
 }
 
 impl TestApp {
@@ -21,8 +22,15 @@ impl TestApp {
             auth_service::services::HashsetBannedTokenStore::default(),
         ));
 
-        let app_state =
-            auth_service::app_state::AppState::new(user_store, banned_token_store.clone());
+        let two_fa_code_store = Arc::new(RwLock::new(
+            auth_service::services::HashMapTwoFACodeStore::default(),
+        ));
+
+        let app_state = auth_service::app_state::AppState::new(
+            user_store,
+            banned_token_store.clone(),
+            two_fa_code_store.clone(),
+        );
 
         let app = Application::build(app_state, constants::test::APP_ADDRESS)
             .await
@@ -44,6 +52,7 @@ impl TestApp {
             cookie_jar,
             http_client,
             banned_token_store,
+            two_fa_code_store,
         }
     }
 
