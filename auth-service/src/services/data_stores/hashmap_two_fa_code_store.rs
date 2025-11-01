@@ -34,7 +34,7 @@ impl TwoFACodeStore for HashMapTwoFACodeStore {
 
 #[cfg(test)]
 mod tests {
-    use crate::{domain::Email, services::hashmap_two_fa_code_store::HashMapTwoFACodeStore};
+    use crate::{domain::Email, services::HashMapTwoFACodeStore};
 
     #[tokio::test]
     async fn should_add_and_get_code() {

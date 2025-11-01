@@ -22,9 +22,9 @@ async fn should_return_422_if_malformed_input() {
 async fn should_return_400_if_invalid_input() {
     let app = TestApp::new().await;
     let test_cases = vec![
-        serde_json::json!({ "email": "not-an-email", "login_attempt_id": "d498ab94-f157-453f-a6e2-da196ae3e713", "two_fa_code": "123456" }),
-        serde_json::json!({ "email": "test@example.org", "login_attempt_id": "", "two_fa_code": "123456" }),
-        serde_json::json!({ "email": "test@example.org", "login_attempt_id": "valid-id", "two_fa_code": "12" }),
+        serde_json::json!({ "email": "not-an-email", "loginAttemptId": "d498ab94-f157-453f-a6e2-da196ae3e713", "2FACode": "123456" }),
+        serde_json::json!({ "email": "test@example.org", "loginAttemptId": "", "2FACode": "123456" }),
+        serde_json::json!({ "email": "test@example.org", "loginAttemptId": "valid-id", "2FACode": "12" }),
     ];
 
     for case in test_cases {
@@ -43,8 +43,8 @@ async fn should_return_401_if_incorrect_credentials() {
 
     let verify_2fa_body = serde_json::json!({
         "email": email.as_ref() as &str,
-        "login_attempt_id": login_attempt_id.as_ref(),
-        "two_fa_code": two_fa_code.as_ref()
+        "loginAttemptId": login_attempt_id.as_ref(),
+        "2FACode": two_fa_code.as_ref()
     });
 
     let response = app.post_verify_2fa(&verify_2fa_body).await;
@@ -68,8 +68,8 @@ async fn should_return_401_if_incorrect_code() {
 
     let verify_2fa_body = serde_json::json!({
         "email": email.as_ref(),
-        "login_attempt_id": login_attempt_id.as_ref(),
-        "two_fa_code": "000000"
+        "loginAttemptId": login_attempt_id.as_ref(),
+        "2FACode": "000000"
     });
 
     let response = app.post_verify_2fa(&verify_2fa_body).await;
@@ -126,8 +126,8 @@ async fn should_return_401_if_old_code() {
 
     let verify_2fa_body = serde_json::json!({
         "email": random_email,
-        "login_attempt_id": login_response.login_attempt_id,
-        "two_fa_code": two_fa_code.as_ref()
+        "loginAttemptId": login_response.login_attempt_id,
+        "2FACode": two_fa_code.as_ref()
     });
 
     let response = app.post_verify_2fa(&verify_2fa_body).await;
@@ -156,8 +156,8 @@ async fn should_return_200_if_correct_code() {
 
     let verify_2fa_body = serde_json::json!({
         "email": email.as_ref() as &str,
-        "login_attempt_id": login_attempt_id.as_ref(),
-        "two_fa_code": two_fa_code.as_ref()
+        "loginAttemptId": login_attempt_id.as_ref(),
+        "2FACode": two_fa_code.as_ref()
     });
 
     let response = app.post_verify_2fa(&verify_2fa_body).await;
@@ -193,8 +193,8 @@ async fn should_return_401_for_same_code_twice() {
 
     let verify_2fa_body = serde_json::json!({
         "email": email.as_ref() as &str,
-        "login_attempt_id": login_attempt_id.as_ref(),
-        "two_fa_code": two_fa_code.as_ref()
+        "loginAttemptId": login_attempt_id.as_ref(),
+        "2FACode": two_fa_code.as_ref()
     });
 
     let response = app.post_verify_2fa(&verify_2fa_body).await;

@@ -1,10 +1,7 @@
 use std::sync::Arc;
 
 use auth_service::{
-    app_state::AppState,
-    get_postgres_pool,
-    utils::constants::{self, DATABASE_URL},
-    Application,
+    Application, app_state::AppState, get_postgres_pool, services::PostgresUserStore, utils::constants::{self, DATABASE_URL}
 };
 use sqlx::PgPool;
 use tokio::sync::RwLock;
@@ -14,7 +11,7 @@ async fn main() {
     let pg_pool = configure_postgres().await;
 
     let user_store = Arc::new(RwLock::new(
-        auth_service::services::HashMapUserStore::default(),
+        PostgresUserStore::new(pg_pool),
     ));
 
     let banned_token_store = Arc::new(RwLock::new(
