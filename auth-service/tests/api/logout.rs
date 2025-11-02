@@ -64,7 +64,7 @@ async fn should_return_200_if_valid_jwt_cookie() {
     // Verify that the token is banned
     let is_banned = {
         let store = app.banned_token_store.read().await;
-        store.is_token_banned(&token).await
+        store.is_token_banned(&token).await.expect("Failed to check if token is banned")
     };
 
     assert!(is_banned, "Token should be banned after logout");

@@ -2,7 +2,7 @@ use std::{collections::HashSet, sync::Arc};
 
 use tokio::sync::RwLock;
 
-use crate::domain::BannedTokenStore;
+use crate::domain::{BannedTokenStore, BannedTokenStoreError};
 
 #[derive(Default)]
 pub struct HashsetBannedTokenStore {
@@ -11,14 +11,15 @@ pub struct HashsetBannedTokenStore {
 
 #[async_trait::async_trait]
 impl BannedTokenStore for HashsetBannedTokenStore {
-    async fn ban_token(&mut self, token: &str) {
+    async fn ban_token(&mut self, token: &str) -> Result<(), BannedTokenStoreError> {
         let mut tokens = self.tokens.write().await;
         tokens.insert(token.to_owned());
+        Ok(())
     }
 
-    async fn is_token_banned(&self, token: &str) -> bool {
+    async fn is_token_banned(&self, token: &str) -> Result<bool, BannedTokenStoreError> {
         let tokens = self.tokens.read().await;
-        tokens.contains(token)
+        Ok(tokens.contains(token))
     }
 }
 
@@ -31,9 +32,9 @@ mod test {
         let mut store = HashsetBannedTokenStore::default();
         let token = "test_token";
 
-        store.ban_token(token).await;
+        store.ban_token(token).await.expect("Failed to ban token");
 
-        assert!(store.is_token_banned(token).await);
+        assert!(store.is_token_banned(token).await.expect("Failed to check token"));
     }
 
     #[tokio::test]
@@ -41,6 +42,6 @@ mod test {
         let store = HashsetBannedTokenStore::default();
         let token = "unbanned_token";
 
-        assert!(!store.is_token_banned(token).await);
+        assert!(!store.is_token_banned(token).await.expect("Failed to check token"));
     }
 }

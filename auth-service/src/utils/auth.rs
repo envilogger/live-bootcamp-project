@@ -31,11 +31,11 @@ pub enum GenerateTokenError {
 }
 
 // This value determines how long the JWT auth token is valid for
-pub const TOKEN_TTL_SECONDS: i64 = 600; // 10 minutes
+pub const TOKEN_TTL_SECONDS: u64 = 600; // 10 minutes
 
 // Create JWT auth token
 fn generate_auth_token(email: &Email) -> Result<String, GenerateTokenError> {
-    let delta = chrono::Duration::try_seconds(TOKEN_TTL_SECONDS)
+    let delta = chrono::Duration::try_seconds(TOKEN_TTL_SECONDS as i64)
         .ok_or(GenerateTokenError::UnexpectedError)?;
 
     // Create JWT expiration time
@@ -61,7 +61,7 @@ pub async fn validate_token(
     token: &str,
     banned_tokens: &dyn BannedTokenStore,
 ) -> Result<Claims, jsonwebtoken::errors::Error> {
-    if banned_tokens.is_token_banned(token).await {
+    if banned_tokens.is_token_banned(token).await.unwrap_or(false) {
         return Err(jsonwebtoken::errors::Error::from(
             jsonwebtoken::errors::ErrorKind::InvalidToken,
         ));
@@ -156,7 +156,7 @@ mod tests {
         let email = Email::parse("test@example.com".to_owned()).unwrap();
         let token = generate_auth_token(&email).unwrap();
         let mut banned_token_source = HashsetBannedTokenStore::default();
-        banned_token_source.ban_token(&token).await;
+        banned_token_source.ban_token(&token).await.expect("Failed to ban token");
         let result = validate_token(&token, &banned_token_source).await;
         assert!(result.is_err());
     }

@@ -61,7 +61,7 @@ async fn should_return_401_for_banned_token() {
     let email = Email::parse(email).unwrap();
     let token = generate_auth_cookie(&email).unwrap().value().to_owned();
 
-    app.banned_token_store.write().await.ban_token(&token).await;
+    app.banned_token_store.write().await.ban_token(&token).await.expect("Failed to ban token");
 
     let body = serde_json::json!({
         "token": token

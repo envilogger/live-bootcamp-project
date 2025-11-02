@@ -3,7 +3,7 @@ use axum_extra::extract::CookieJar;
 
 use crate::{
     app_state::AppState,
-    domain::error::AuthAPIError,
+    domain::{BannedTokenStoreError, error::AuthAPIError},
     utils::{auth::validate_token, constants::JWT_COOKIE_NAME},
 };
 
@@ -25,7 +25,11 @@ pub async fn logout(
 
     let jar = jar.remove(JWT_COOKIE_NAME);
 
-    banned_token_store.ban_token(&token).await;
+    banned_token_store.ban_token(&token).await.map_err(|e| match e {
+        BannedTokenStoreError::UnexpectedError => {
+            AuthAPIError::UnexpectedError
+        }
+    })?;
 
     Ok((jar, StatusCode::OK))
 }

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use auth_service::{
     domain::BannedTokenStore,
-    get_postgres_pool,
+    get_postgres_pool, get_redis_client,
     utils::constants::{self, DATABASE_URL},
     Application,
 };
@@ -31,8 +31,9 @@ impl TestApp {
             pg_pool,
         )));
 
+        let redis_conn = configure_redis();
         let banned_token_store = Arc::new(RwLock::new(
-            auth_service::services::HashsetBannedTokenStore::default(),
+            auth_service::services::RedisBannedTokenStore::new(Arc::new(RwLock::new(redis_conn))),
         ));
 
         let two_fa_code_store = Arc::new(RwLock::new(
@@ -140,7 +141,7 @@ impl TestApp {
 impl Drop for TestApp {
     fn drop(&mut self) {
         if !self.cleaned_up {
-          panic!("TestApp database was not cleaned up. Please call the cleanup method before dropping the TestApp instance.");
+            panic!("TestApp database was not cleaned up. Please call the cleanup method before dropping the TestApp instance.");
         }
     }
 }
@@ -207,3 +208,9 @@ async fn delete_database(database_url: &str, db_name: &str) {
         .expect("Failed to drop database");
 }
 
+fn configure_redis() -> redis::Connection {
+    get_redis_client(constants::REDIS_HOST_NAME.to_owned())
+        .expect("Failed to get Redis client")
+        .get_connection()
+        .expect("Failed to get Redis connection")
+}
