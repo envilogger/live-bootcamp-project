@@ -38,6 +38,8 @@ async fn should_return_422_if_malformed_input() {
             test_case
         );
     }
+
+    app.cleanup().await;
 }
 
 #[tokio::test]
@@ -64,6 +66,8 @@ async fn should_return_201_for_valid_input() {
             .expect("Failed to deserialize response body to SignupResponse"),
         expected_response
     );
+
+    app.cleanup().await;
 }
 
 #[tokio::test]
@@ -94,6 +98,8 @@ async fn should_return_400_if_invalid_input() {
             test_case
         );
     }
+
+    app.cleanup().await;
 }
 
 #[tokio::test]
@@ -112,4 +118,6 @@ async fn should_return_409_if_email_already_exists() {
     // Try to create the user again
     let response = app.post_signup(&body).await;
     assert_eq!(response.status().as_u16(), 409);
+
+    app.cleanup().await;
 }

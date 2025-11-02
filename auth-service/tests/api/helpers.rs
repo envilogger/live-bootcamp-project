@@ -18,11 +18,14 @@ pub struct TestApp {
     pub banned_token_store: Arc<RwLock<dyn BannedTokenStore>>,
     pub two_fa_code_store: Arc<RwLock<dyn auth_service::domain::TwoFACodeStore>>,
     pub user_store: Arc<RwLock<dyn auth_service::domain::UserStore>>,
+    db_name: String,
+    cleaned_up: bool,
 }
 
 impl TestApp {
     pub async fn new() -> Self {
-        let pg_pool = configure_postgres().await;
+        let db_name = Uuid::new_v4().to_string();
+        let pg_pool = configure_postgres(&db_name).await;
 
         let user_store = Arc::new(RwLock::new(auth_service::services::PostgresUserStore::new(
             pg_pool,
@@ -67,6 +70,8 @@ impl TestApp {
             banned_token_store,
             two_fa_code_store,
             user_store,
+            db_name,
+            cleaned_up: false,
         }
     }
 
@@ -124,16 +129,29 @@ impl TestApp {
             .await
             .expect("Failed to execute request.")
     }
+
+    pub async fn cleanup(mut self) {
+        let database_url = DATABASE_URL.to_owned();
+        delete_database(&database_url, &self.db_name).await;
+        self.cleaned_up = true;
+    }
+}
+
+impl Drop for TestApp {
+    fn drop(&mut self) {
+        if !self.cleaned_up {
+          panic!("TestApp database was not cleaned up. Please call the cleanup method before dropping the TestApp instance.");
+        }
+    }
 }
 
 pub fn get_random_email() -> String {
     format!("{}@example.com", uuid::Uuid::new_v4())
 }
 
-async fn configure_postgres() -> sqlx::PgPool {
+async fn configure_postgres(db_name: &str) -> sqlx::PgPool {
     let database_url = DATABASE_URL.to_owned();
-    let db_name = Uuid::new_v4().to_string();
-    configure_database(database_url.clone(), &db_name).await;
+    configure_database(&database_url, db_name).await;
 
     let postgresql_conn_url = format!("{}/{}", database_url, db_name);
 
@@ -153,9 +171,9 @@ async fn configure_postgres() -> sqlx::PgPool {
     pg_pool
 }
 
-async fn configure_database(database_url: String, db_name: &str) {
+async fn configure_database(database_url: &str, db_name: &str) {
     let connection = PgPoolOptions::new()
-        .connect(&database_url)
+        .connect(database_url)
         .await
         .expect("Failed to connect to Postgres");
 
@@ -176,3 +194,16 @@ async fn configure_database(database_url: String, db_name: &str) {
         .await
         .expect("Failed to run database migrations");
 }
+
+async fn delete_database(database_url: &str, db_name: &str) {
+    let connection = PgPoolOptions::new()
+        .connect(database_url)
+        .await
+        .expect("Failed to connect to Postgres");
+
+    connection
+        .execute(format!(r#"DROP DATABASE IF EXISTS "{}";"#, db_name).as_str())
+        .await
+        .expect("Failed to drop database");
+}
+
