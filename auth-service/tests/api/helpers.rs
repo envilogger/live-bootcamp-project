@@ -31,13 +31,15 @@ impl TestApp {
             pg_pool,
         )));
 
-        let redis_conn = configure_redis();
+        let shared_redis_conn = configure_redis();
+        let shared_redis_conn = Arc::new(RwLock::new(shared_redis_conn));
+
         let banned_token_store = Arc::new(RwLock::new(
-            auth_service::services::RedisBannedTokenStore::new(Arc::new(RwLock::new(redis_conn))),
+            auth_service::services::RedisBannedTokenStore::new(shared_redis_conn.clone()),
         ));
 
         let two_fa_code_store = Arc::new(RwLock::new(
-            auth_service::services::HashMapTwoFACodeStore::default(),
+            auth_service::services::RedisTwoFaCodeStore::new(shared_redis_conn.clone()),
         ));
 
         let email_client = Arc::new(auth_service::services::MockEmailClient {});
